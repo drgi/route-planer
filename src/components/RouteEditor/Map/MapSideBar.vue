@@ -25,7 +25,9 @@
     <!--SideBar Footer with button-->
     <div class="sidebar-buttons-panel">
       <div class="section sidebar-buttons">
-        <a href="#"><i class="material-icons button-icon">add</i></a>
+        <a href="#" @click="addNewRoutePoint"
+          ><i class="material-icons button-icon">add</i></a
+        >
         <a href="#" @click="clearMap"
           ><i class="material-icons button-icon">layers_clear</i></a
         >
@@ -74,6 +76,7 @@
 import PointDraggableList from './PointDraggableList/PointDraggableList';
 import RouteFileLoader from '../RouteFileLoader/RouteFileLoader';
 import { mapMutations, mapGetters } from 'vuex';
+import { addMarker } from './src/marker-class';
 export default {
   components: { PointDraggableList, RouteFileLoader },
   data() {
@@ -99,11 +102,9 @@ export default {
       });
     },
     openRouteEditor() {
-      console.log('OpenRouteEditor');
       this.$emit('openrouteeditor');
     },
     openPointContenEditor(id) {
-      console.log('openPointContentEditor in sidebar', id);
       this.$emit('openPointEditor', id);
     },
     clearMap() {
@@ -112,6 +113,9 @@ export default {
       ) {
         this.removeAllPointsAndRoutes();
       }
+    },
+    async addNewRoutePoint() {
+      await addMarker(null, { isRouteble: true });
     },
   },
   props: {

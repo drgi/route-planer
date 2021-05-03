@@ -35,7 +35,6 @@ export default {
       this.tab = 'RouteContentEditor';
     },
     openPointContentEditor(id) {
-      console.log('Emit in RouteEditor', id);
       this.pointProps = id;
       this.tab = 'PointContenEditor';
     },

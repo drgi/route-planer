@@ -1,18 +1,27 @@
 import { divIcon } from 'leaflet';
-const defaultIconHtml =
-  '<a href="#"><img src="../icon/route.png" height="40" width="40"/></a>';
-const activeIconHtml =
-  '<a href="#"><img src="../icon/route.png" height="40" width="40" style="box-shadow:0 0 15px #00aaff;"/></a>';
+const defaultIconHtml = (iconUrl) =>
+  `<a href="#"><img src="${iconUrl}" height="40" width="40"/></a>`;
+const activeIconHtml = (iconUrl) =>
+  `<a href="#"><img src="${iconUrl}" height="40" width="40"  style="filter: drop-shadow(0 0px 5px red);"/></a>`;
 
-export const defaultIcon = divIcon({
-  className: 'material-icons prefix',
-  html: defaultIconHtml,
-  iconSize: [40, 40],
-  iconAnchor: [20, 40],
-});
-export const activeIcon = divIcon({
-  className: 'material-icons prefix',
-  html: activeIconHtml,
-  iconSize: [40, 40],
-  iconAnchor: [20, 40],
-});
+export const defaultIcon = (iconUrl = '../icon/route.png') => {
+  const html = defaultIconHtml(iconUrl);
+  const icon = divIcon({
+    className: 'material-icons prefix',
+    html: html,
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+  });
+  return icon;
+};
+
+export const activeIcon = (iconUrl = '../icon/route.png') => {
+  const html = activeIconHtml(iconUrl);
+  const icon = divIcon({
+    className: 'material-icons prefix',
+    html: html,
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+  });
+  return icon;
+};

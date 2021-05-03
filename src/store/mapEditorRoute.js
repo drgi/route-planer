@@ -1,11 +1,31 @@
 import requestApi from '../controllers/api/';
 export default {
   state: () => ({
+    avatar: null,
+    bikeType: null,
+    description: null,
+    difficult: null,
+    name: null,
+    type: null,
+    duration: '',
     points: [],
     routeLegs: [],
     routeLegsFromFiles: [],
   }),
   getters: {
+    //Getters for Form addRoute
+    getRouteId: (state) => state._id,
+    getRouteName: (state) => state.name,
+    getRouteType: (state) => state.type,
+    getRouteLength(state) {
+      const km = state.routeLength / 1000;
+      return km.toFixed(2);
+    },
+    getRouteDuration: (state) => state.duration,
+    getRouteDifficult: (state) => state.difficult,
+    getBikeType: (state) => state.bikeType,
+    getRouteDescription: (state) => state.description,
+    //==================================================
     points: (state) => state.points,
     routeLegs: (state) => state.routeLegs,
     routeLegsFromFiles: (state) => state.routeLegsFromFiles,
@@ -15,6 +35,26 @@ export default {
         .map((point) => point.getLngLat()),
   },
   mutations: {
+    //Setters for Form RouteContentEditor
+    setRouteName(state, value) {
+      state.name = value;
+    },
+    setRouteType(state, value) {
+      state.type = value;
+    },
+    setRouteDuration(state, value) {
+      state.duration = value;
+    },
+    setRouteDifficult(state, value) {
+      state.difficult = value;
+    },
+    setBikeType(state, value) {
+      state.bikeType = value;
+    },
+    setRouteDescription(state, value) {
+      state.description = value;
+    },
+    //********************************************* */
     addMarkerToState(state, marker) {
       const lastIndex = state.points.length;
       marker.index = lastIndex;
@@ -22,6 +62,9 @@ export default {
     },
     addDictanceToNextPoint(state, geoJson) {
       const segments = geoJson.features[0].properties.segments;
+      state.points.map((p) =>
+        p.ditanceToNextPoint ? (p.ditanceToNextPoint = null) : p
+      );
       state.points
         .filter((p) => p.isRouteble)
         .map((p, idx, arr) => {
@@ -40,6 +83,9 @@ export default {
     addRouteLegsFromFiles(state, geoJOSNs) {
       state.routeLegsFromFiles = [...state.routeLegsFromFiles, ...geoJOSNs];
     },
+    refreshState(state) {
+      state.points = [...state.points];
+    },
     removeAllRouteLegs(state) {
       state.routeLegs = [];
     },
@@ -49,8 +95,6 @@ export default {
       );
     },
     removePoint(state, routeMarker) {
-      //routeMarker.removeFromLayer();
-      console.log('State', routeMarker);
       state.points = state.points.filter((p) => p.id !== routeMarker.id);
     },
     changeRouteble(state, routeMarker) {
@@ -67,14 +111,12 @@ export default {
     async requestRouteFromApi({ commit, getters }) {
       const pointsForRouteReq = getters.getPointsForRouteRequest;
       if (pointsForRouteReq.length < 2) return;
-      console.log('requestRouteFromApi', pointsForRouteReq);
       try {
         const { data } = await requestApi('requestRouteDirection', {
           coordinates: pointsForRouteReq,
         });
         commit('addGeoJson', data);
         commit('addDictanceToNextPoint', data);
-        console.log('GeoJson', data);
       } catch (err) {
         console.log('Request route Error', err);
       }
@@ -91,7 +133,6 @@ export default {
         },
         []
       );
-      console.log('Pair', pairOfpoints);
       commit('removeAllRouteLegs');
       for (let p of pairOfpoints) {
         const { data } = await requestApi('requestRouteDirection', {

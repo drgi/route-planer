@@ -1,10 +1,8 @@
 import toGeoJSON from 'togeojson';
-import RouteLeg from '../Map/RouteLeg-class';
+import RouteLeg from '../Map/src/RouteLeg-class/RouteLeg-class';
 
 const convertRouteFiles = async (files) => {
   const filesArr = Array.from(files);
-  console.log('Files Arr ', filesArr);
-
   const geoJSONs = [];
   for (let file of filesArr) {
     const { name, size } = file;
@@ -29,7 +27,6 @@ const _convertFile = (file) => {
       resolve(geoJSON);
     };
     fileReader.onerror = function (err) {
-      console.log(err);
       reject(err);
     };
   });

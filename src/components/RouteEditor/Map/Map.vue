@@ -4,12 +4,15 @@
 <script>
 import L from 'leaflet';
 import { addMarker } from './src/marker-class';
-import { mapMutations, mapActions } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 import { getClientCoordsById } from '../../../controllers/api/ididentificate';
 let mapCenterCoords = [51.505, -0.09];
 export default {
   data() {
     return {
+      selectStartCoord: null,
+      selectEndCoord: null,
+      polygon: null,
       map: null,
       geoJSONLayers: [],
       geoJSONLayersFromFiles: [],
@@ -18,53 +21,49 @@ export default {
         draggable: true,
         isRouteble: true,
       },
-      //points: [],
     };
   },
-  // computed: {
-  //   ...mapState(['points']),
-  //   // points() {
-  //   //   return this.$store.getters.points;
-  //   // },
-  // },
-  methods: {
-    ...mapMutations(['addMarkerToState', 'removePoint']),
-    ...mapActions(['requestRouteFromApi']),
-    removeMarker(routeMarker) {
-      this.removePoint(routeMarker);
-    },
-    async dragendMarker(routeMarker) {
-      console.log('RouteMarker', routeMarker);
-
-      await routeMarker.geoCodePointByCoords();
-      await this.requestRouteFromApi();
-      //this.requestRouteFromApiAfterDrag(routeMarker);
-    },
-    async addMarker($evt) {
-      const marker = await addMarker($evt.latlng, this.markerOptions);
-      const evt = [
-        ['contextmenu', this.removeMarker],
-        ['dragend', this.dragendMarker],
+  computed: {
+    selectAreaCoords() {
+      const selectArea = [
+        [this.selectStartCoord.lat, this.selectStartCoord.lng],
+        [this.selectStartCoord.lat, this.selectEndCoord.lng],
+        [this.selectEndCoord.lat, this.selectEndCoord.lng],
+        [this.selectEndCoord.lat, this.selectStartCoord.lng],
       ];
-      marker.addEvents(evt);
-      // marker.on('contextmenu', (e) => {
-      //   console.log('Click evt', e);
-      //   e.target.removeFrom(this.markerLayer);
-      //   this.points = this.points.filter(
-      //     (p) => p._leaflet_id !== e.target._leaflet_id
-      //   );
-      // });
-      // marker.on('dragend', () => {
-      //   this.points = [...this.points];
-      // });
-      //this.points = [...this.points, marker];
-      //this.addMarkerToState(marker);
+      return selectArea;
+    },
+    latRange() {
+      const latStart = this.selectStartCoord.lat;
+      const latEnd = this.selectEndCoord.lat;
+      const range = [latStart, latEnd];
+      return latStart > latEnd ? range.reverse() : range;
+    },
+    lngRange() {
+      const lngStart = this.selectStartCoord.lng;
+      const lngEnd = this.selectEndCoord.lng;
+      const range = [lngStart, lngEnd];
+      return lngStart > lngEnd ? range.reverse() : range;
+    },
+  },
+  methods: {
+    ...mapGetters(['routeLegsFromFiles']),
+    ...mapActions(['requestRouteFromApi']),
+    async addMarker($evt) {
+      await addMarker($evt.latlng, this.markerOptions);
+    },
+    filterRouteLegs() {
+      const latRange = this.latRange;
+      const lngRange = this.lngRange;
+      const routeLegs = this.routeLegsFromFiles;
+      routeLegs.forEach((r) =>
+        r.filterCoords(latRange, lngRange).addToLayer(this.map)
+      );
     },
   },
   async mounted() {
     try {
       mapCenterCoords = await getClientCoordsById();
-      console.log('Coords', mapCenterCoords);
     } catch (err) {
       console.log('IP identificate Error', err);
     }
@@ -78,27 +77,37 @@ export default {
       this.map
     );
     this.map.on('click', (e) => {
-      console.log('Map event', e);
-      //e.originalEvent.preventDefault();
-      //e.originalEvent.stopPropagation();
+      if (e.originalEvent.ctrlKey) return;
       this.addMarker(e);
+    });
+    this.map.on('mousedown', (e) => {
+      if (e.originalEvent.ctrlKey) {
+        e.target.dragging.disable();
+        e.target.on('mousemove', (e) => {
+          this.selectEndCoord = e.latlng;
+        });
+        this.selectStartCoord = e.latlng;
+      }
+    });
+    this.map.on('mouseup', (e) => {
+      if (e.originalEvent.ctrlKey) {
+        e.target.off('mousemove');
+        e.target.dragging.enable();
+        this.polygon.remove();
+        this.filterRouteLegs();
+      }
     });
   },
   watch: {
-    points(now, el) {
-      console.log('Watch Points', 'Now:', now, 'Prev:', el);
-      // const pointToRoute = [];
+    points(now) {
       this.markerLayer.clearLayers();
       now.forEach((point) => {
         point.addToLayer(this.markerLayer);
-        //point.marker.addTo(this.map);
       });
       this.markerLayer.addTo(this.map);
       this.requestRouteFromApi();
-      //console.log('Point for routing', pointToRoute);
     },
-    routeLegs(now, prev) {
-      console.log('Route legs', now, prev);
+    routeLegs(now) {
       if (this.geoJSONLayers.length > 0) {
         this.geoJSONLayers.forEach((l) => l.remove());
         this.geoJSONLayers = [];
@@ -106,8 +115,7 @@ export default {
       now.forEach((g) => this.geoJSONLayers.push(L.geoJSON(g)));
       this.geoJSONLayers.forEach((l) => l.addTo(this.map));
     },
-    routeLegsFromFiles(now, prev) {
-      console.log('Route legs', now, prev);
+    routeLegsFromFiles(now) {
       if (now.length === 0) {
         this.geoJSONLayersFromFiles.forEach((l) => l.remove());
         this.geoJSONLayersFromFiles = [];
@@ -117,11 +125,20 @@ export default {
       now.forEach((g) => this.geoJSONLayersFromFiles.push(g));
       this.geoJSONLayersFromFiles.forEach((l) => l.addToLayer(this.map));
     },
+    selectEndCoord() {
+      if (this.polygon) {
+        this.polygon.remove();
+      }
+      this.polygon = L.polygon(this.selectAreaCoords).addTo(this.map);
+    },
   },
   props: {
     points: Array,
     routeLegs: Array,
     routeLegsFromFiles: Array,
+  },
+  updated() {
+    console.log('Dom Updated');
   },
 };
 </script>

@@ -1,7 +1,7 @@
-import { createStore } from "vuex";
-import points from "./points";
+import { createStore } from 'vuex';
+import mapEditorRoute from './mapEditorRoute';
 const store = createStore({
-  modules: { points },
+  modules: { mapEditorRoute },
 });
 
 export default store;

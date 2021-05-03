@@ -11,7 +11,7 @@
       <li
         @mouseover="showMarker(index)"
         @mouseleave="unShowMarker(index)"
-        :style="{ 'margin-left': element.isRouteble ? '0px' : '25px' }"
+        :style="{ 'margin-left': element.isRouteble ? '0px' : '15px' }"
       >
         <div class="row point-list hoverable">
           <div class="input-field col s10 point-field">
@@ -24,8 +24,9 @@
 
             <input
               v-model="element.title"
+              @input="requestAutocomplite(index)"
               type="text"
-              :id="'autocomplete-input' + index"
+              :id="'autocomplete-input' + element.id"
               class="autocomplete point-input"
               :placeholder="element.id + element.isRouteble.toString()"
             />
@@ -92,15 +93,13 @@ export default {
     },
   },
   methods: {
-    ...mapActions(['requestRouteFromApiAfterDragList']),
+    ...mapActions(['requestRouteFromApi']),
     ...mapMutations(['removePoint', 'changeRouteble']),
     openPointContenEditor(id) {
-      console.log('Emit in PointDraggableList', id);
       this.$emit('openeditor', id);
     },
-    changeListPosition(list) {
-      console.log('End of dragg', list);
-      this.requestRouteFromApiAfterDragList();
+    changeListPosition() {
+      this.requestRouteFromApi();
     },
     flyToMarker(index) {
       this.points[index].flyToMarker();
@@ -111,13 +110,27 @@ export default {
     unShowMarker(index) {
       this.points[index].turnOffLightMarker();
     },
+    async requestAutocomplite(index) {
+      try {
+        await this.points[index].updateAutocompliteData();
+      } catch (err) {
+        console.log('Autocomplite Error', err);
+      }
+    },
   },
-
   props: {
     points: Array,
   },
   updated() {
     M.AutoInit();
+    this.points.forEach((p) => {
+      const id = `autocomplete-input${p.id}`;
+      const node = document.getElementById(id);
+      p.setDOMNode(node);
+      if (!p.marker) {
+        p.ActivateAutoComplite();
+      }
+    });
   },
 };
 </script>
@@ -136,7 +149,7 @@ export default {
   font-size: 10px !important;
   .point-input {
     margin-bottom: 0px !important;
-    margin-left: 30px !important;
+    margin-left: 20px !important;
     height: 1.5rem !important;
     font-size: 15px !important;
   }

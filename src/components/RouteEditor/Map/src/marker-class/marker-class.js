@@ -1,32 +1,61 @@
-import { marker } from 'leaflet';
+//import { marker } from 'leaflet';
+import { createLeafletMarker } from './create-marker';
 import { v4 } from 'uuid';
-import { geoCodePointFromCords } from './geocoding';
+import { geoCodePointFromCords, geoCodePointFromTitle } from './geocoding';
 import { activeIcon, defaultIcon } from './marker-icon';
+import { Autocomplete } from 'materialize-css';
+import {
+  convertDataForAutocomplit,
+  getAutocompliteList,
+  getLatLngFromLabel,
+} from './autocomplite-converter';
+import store from '../../../../../store';
 export default class RouteMarker {
   constructor(latLng, opt) {
-    this.isRouteble = opt.isRouteble;
-    this.marker = marker(latLng, opt);
-    // this.marker.options.icon = icon({
-    //   iconUrl: '../icon/route.png',
-    //   iconSize: [38, 50],
-    //   iconAnchor: [22, 49],
-    //   popupAnchor: [-3, -76],
-    //   shadowSize: [68, 95],
-    //   shadowAnchor: [22, 94],
-    // });
-    console.log('Icon', defaultIcon);
-
-    this.marker.options.icon = defaultIcon;
+    this.isRouteble = opt.isRouteble || false;
+    this.marker = latLng ? createLeafletMarker.call(this, latLng, opt) : null;
+    if (this.marker) {
+      this.marker.options.icon = defaultIcon();
+    }
     this.id = v4();
     this.index = null;
     this.ditanceToNextPoint = null;
+    this.iconUrl = opt.icon || '../icon/route.png';
     // Point content
     this.title = opt.title || '';
     this.geoCode = '';
     this.latLng = latLng;
     this.description = opt.description || '';
+    this.DOMNode = null;
+    this.autocompleteInst = null;
+    this.evts = null;
   }
-
+  addPointFromAutocomlite() {
+    const latLng = getLatLngFromLabel(this.title);
+    this.marker = createLeafletMarker.call(this, latLng, {
+      draggable: true,
+      isRouteble: true,
+    });
+  }
+  ActivateAutoComplite() {
+    this.autocompleteInst = Autocomplete.init(this.DOMNode, {
+      onAutocomplete: (text) => {
+        this.title = text;
+        this.geoCode = text;
+        this.addPointFromAutocomlite();
+        store.commit('refreshState');
+      },
+    });
+  }
+  async updateAutocompliteData() {
+    //request geocoding data...
+    if (this.title.length < 3) return;
+    const { data } = await geoCodePointFromTitle(this.title);
+    convertDataForAutocomplit(data);
+    const list = getAutocompliteList();
+    this.autocompleteInst.updateData(list);
+    this.autocompleteInst.open();
+  }
   addEvents(evts) {
     evts.forEach((evt) => {
       const [key, fn] = evt;
@@ -53,8 +82,10 @@ export default class RouteMarker {
     const lngLat = Object.entries(latLng)
       .map((l) => l[1])
       .reverse();
-    console.log('Latlng', lngLat);
     return lngLat;
+  }
+  getCoords() {
+    return `${this.latLng.lat}, ${this.latLng.lng}`;
   }
   changeRouteble() {
     this.isRouteble = !this.isRouteble;
@@ -71,12 +102,32 @@ export default class RouteMarker {
     this.marker._map.flyTo(latLng, 15);
   }
   turnOnLightMarker() {
-    this.marker.setIcon(activeIcon);
+    if (!this.marker) return;
+    const icon = activeIcon(this.iconUrl);
+    this.refreshMarkerIcon(icon);
   }
   turnOffLightMarker() {
-    this.marker.setIcon(defaultIcon);
+    if (!this.marker) return;
+    const icon = defaultIcon(this.iconUrl);
+    this.refreshMarkerIcon(icon);
   }
   removeFromLayer() {
     this.marker.remove();
+  }
+  refreshMarkerIcon(icon = defaultIcon(this.iconUrl)) {
+    this.marker.setIcon(icon);
+  }
+  setDescription(description) {
+    this.description = description;
+  }
+  setDOMNode(node) {
+    this.DOMNode = node;
+  }
+  setTitle(title) {
+    this.title = title;
+  }
+  setIcon(iconUrl) {
+    this.iconUrl = iconUrl;
+    this.refreshMarkerIcon();
   }
 }

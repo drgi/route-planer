@@ -15,3 +15,9 @@ export const geoCodePointFromCords = async ({ lat, lng }) => {
   });
   return req;
 };
+export const geoCodePointFromTitle = async (title) => {
+  const req = await geoCodingApi('/geocode/autocomplete', {
+    params: { api_key: API_KEY, text: title },
+  });
+  return req;
+};

@@ -27,11 +27,9 @@ export default {
   },
   methods: {
     openRouteContentEditor() {
-      console.log('openRouteContentEditor');
       this.$emit('openrouteeditor');
     },
     openPointContentEditor(id) {
-      console.log('openPointEditor in Routemap', id);
       this.$emit('openPointEditor', id);
     },
   },
