@@ -1,5 +1,5 @@
 <template>
-  <div id="map" class="map col s12"></div>
+  <div id="map" class="map col s12" :style="{ height: screenHeight }"></div>
 </template>
 <script>
 import L from 'leaflet';
@@ -44,6 +44,10 @@ export default {
       const lngEnd = this.selectEndCoord.lng;
       const range = [lngStart, lngEnd];
       return lngStart > lngEnd ? range.reverse() : range;
+    },
+    screenHeight() {
+      const height = window.innerHeight;
+      return height.toString() + 'px';
     },
   },
   methods: {
@@ -138,7 +142,7 @@ export default {
     routeLegsFromFiles: Array,
   },
   updated() {
-    console.log('Dom Updated');
+    console.log('Dom Updated', this.map);
   },
 };
 </script>
@@ -146,7 +150,6 @@ export default {
 @import url('https://unpkg.com/leaflet@1.6.0/dist/leaflet.css');
 .map {
   min-width: 100%;
-  height: 1000px;
   padding: 0px;
   margin: 0px;
 }

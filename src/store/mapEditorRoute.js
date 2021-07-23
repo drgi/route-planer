@@ -31,7 +31,7 @@ export default {
     routeLegsFromFiles: (state) => state.routeLegsFromFiles,
     getPointsForRouteRequest: (state) =>
       state.points
-        .filter((p) => p.isRouteble)
+        .filter((p) => p.isRouteble && p.marker)
         .map((point) => point.getLngLat()),
   },
   mutations: {

@@ -28,7 +28,7 @@
               type="text"
               :id="'autocomplete-input' + element.id"
               class="autocomplete point-input"
-              :placeholder="element.id + element.isRouteble.toString()"
+              :placeholder="element.marker ? '' : 'Введите адрес или название'"
             />
           </div>
           <a class="dropdown-trigger" href="#" :data-target="'dropdown' + index"
@@ -111,6 +111,7 @@ export default {
       this.points[index].turnOffLightMarker();
     },
     async requestAutocomplite(index) {
+      if (!this.points[index].autocompleteInst) return;
       try {
         await this.points[index].updateAutocompliteData();
       } catch (err) {

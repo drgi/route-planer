@@ -115,7 +115,7 @@ export default {
       }
     },
     async addNewRoutePoint() {
-      await addMarker(null, { isRouteble: true });
+      await addMarker(null, {});
     },
   },
   props: {

@@ -1,4 +1,4 @@
-//import { marker } from 'leaflet';
+//import { popup } from 'leaflet';
 import { createLeafletMarker } from './create-marker';
 import { v4 } from 'uuid';
 import { geoCodePointFromCords, geoCodePointFromTitle } from './geocoding';
@@ -34,8 +34,10 @@ export default class RouteMarker {
     const latLng = getLatLngFromLabel(this.title);
     this.marker = createLeafletMarker.call(this, latLng, {
       draggable: true,
-      isRouteble: true,
     });
+    if (this.marker) {
+      this.isRouteble = true;
+    }
   }
   ActivateAutoComplite() {
     this.autocompleteInst = Autocomplete.init(this.DOMNode, {
@@ -98,6 +100,7 @@ export default class RouteMarker {
     return;
   }
   flyToMarker() {
+    if (!this.marker) return;
     const latLng = this.marker.getLatLng();
     this.marker._map.flyTo(latLng, 15);
   }
@@ -111,6 +114,7 @@ export default class RouteMarker {
     const icon = defaultIcon(this.iconUrl);
     this.refreshMarkerIcon(icon);
   }
+  openPopUp() {}
   removeFromLayer() {
     this.marker.remove();
   }

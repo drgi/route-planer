@@ -103,7 +103,7 @@
               id="textarea1"
               class="materialize-textarea active"
             ></textarea>
-            <label for="textarea1">{{ pointProps.iconUrl }}</label>
+            <label for="textarea1">{{ icon }}</label>
           </div>
         </div>
       </form>
@@ -117,6 +117,7 @@ export default {
   data() {
     return {
       icon: this.pointProps.iconUrl || '',
+      select: null,
     };
   },
   computed: {
@@ -141,9 +142,15 @@ export default {
     },
   },
   activated() {
-    M.AutoInit();
+    this.icon = this.pointProps.iconUrl || '';
+    const selectDom = document.querySelectorAll('select');
+    this.select = M.FormSelect.init(selectDom, { input: this.icon });
+    console.log('THIS', this);
+    this.$forceUpdate();
   },
-  deactivated() {},
+  deactivated() {
+    this.select.forEach((s) => s.destroy());
+  },
   props: {
     pointProps: Object,
   },
